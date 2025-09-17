@@ -1,43 +1,41 @@
-FROM node:20.10.0-alpine as builder
+FROM node:20.10.0-alpine AS builder
 WORKDIR /app
 
-# Install dependencies
-
 COPY package.json ./
-COPY yarn.lock ./
+COPY package-lock.json ./  
 
-RUN #npm config set scripts-prepend-node-path true
+RUN npm config set registry https://registry.npmjs.org/
+    
 
-RUN yarn install
+RUN npm install --legacy-peer-deps
+    
 
-# Copy source, static and config files (node_modules is ignored)
 COPY . .
 
-ARG version=0.0.0
-ENV VITE_APP_VERSION=$version
+ARG VERSION=0.0.0
+ENV VITE_APP_VERSION=$VERSION
+ENV NODE_OPTIONS=--max-old-space-size=1536  
 
-# Build application
-ENV NODE_OPTIONS=--max-old-space-size=1536
-RUN yarn build
-
-FROM nginx:stable-alpine as app
-
-WORKDIR /usr/share/nginx/html
+RUN npm run build
+    
+FROM nginx:stable-alpine AS app
+WORKDIR /usr/share/nginx/html  
 
 RUN apk add --no-cache gettext
+    
 
 COPY nginx-entrypoint.sh /
-
-# Copy env file
 COPY env.js ./
+    
 
-# Copy app files
-COPY --from=0 app/build/ ./
+COPY --from=builder /app/build ./
+    
 
-# Copy reverse proxy configuration
-COPY ./nginx/default.conf /default-nginx.conf
+COPY ./nginx/default.conf /etc/nginx/conf.d/default.conf
+    
 
 ARG VERSION
 ENV REACT_APP_VERSION=$VERSION
-
-ENTRYPOINT [ "sh", "/nginx-entrypoint.sh" ]
+    
+ENTRYPOINT ["sh", "/nginx-entrypoint.sh"]
+    

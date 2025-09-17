@@ -37,7 +37,7 @@ const MigrateRelease = React.lazy(
 );
 
 const routes = [
-  { path: PathConstants.HOME, element: <Home /> },
+  { index: true, element: <Home /> },
   { path: PathConstants.MODULES, element: <Modules /> },
   { path: PathConstants.MODULE_NEW, element: <NewModule /> },
   { path: PathConstants.MODULE_GET, element: <ModuleDetails /> },
